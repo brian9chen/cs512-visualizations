@@ -23,6 +23,9 @@ Copy these new files into the matching directories in the course repo:
 - `visualizations/spanner.html`
 - `js/spanner-model.js`
 - `js/spanner-animation.js`
+- `visualizations/memcached.html`
+- `js/memcached-model.js`
+- `js/memcached-animation.js`
 
 Add links to the new pages in the course's `visualization.html`.
 This workspace's gallery contains matching cards you can copy.
@@ -59,3 +62,14 @@ Snapshot reads demonstrate both replication lag and unresolved-prepare limits on
 This is a teaching model of the [2012 Spanner protocol](https://www.usenix.org/system/files/conference/osdi12/osdi12-final-16.pdf).
 Message batching, lease recovery, and delays are simplified; all timestamps are illustrative.
 The page's “Model & sources” dialog explains the assumptions.
+
+## Memcached
+
+Open <http://localhost:8000/visualizations/memcached.html>.
+Four tabs cover cache basics, synchronized stale-refill comparisons, miss storms, and scaling.
+Scaling switches among one cluster, one region, and cross-region replication, including an early-delete counterexample.
+All playback is manual; the miss-storm reader count is adjustable.
+
+The lease and regional invalidation lessons follow [Scaling Memcache at Facebook (NSDI 2013)](https://www.usenix.org/system/files/conference/nsdi13/nsdi13-final170_update.pdf).
+Leases are presented as Facebook's extension, separately from the basic Memcached API.
+The page's “Model & sources” dialog identifies the simplified routing map, one-wave lease model, and consistency limits.
