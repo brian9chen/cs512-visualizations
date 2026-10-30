@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Explore how locking, two-phase commit, Paxos, TrueTime, and MVCC compose in Spanner.">
+  <title>CPS 512 - Distributed Systems - Spanner Transactions</title>
+  <link href="../css/style.css" rel="stylesheet" type="text/css">
+  <script src="../js/spanner-model.js?v=2" defer></script>
+  <script src="../js/spanner-animation.js?v=4" defer></script>
+  <style>
+    body { padding-top:60px; }
+    main.container-wide { max-width:1440px; }
+    .spanner-page { margin:10px 0 0; }
+    .spanner-page h1 { font-size:1.7rem; margin:0 0 4px; }
+    .spanner-intro { margin:0 0 10px; color:#5c667a; font-size:.95rem; }
+  </style>
+</head>
+<body>
+  <nav class="navbar fixed-top navbar-expand navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand mb-0 h1" href="../index.html">CPS 512 - Distributed Systems</a>
+      <ul class="navbar-nav"><li class="nav-item"><a class="nav-link" href="../visualization.html">Visualization</a></li></ul>
+    </div>
+  </nav>
+  <main class="container container-wide">
+    <div class="spanner-page">
+      <h1>Spanner Transactions</h1>
+      <p class="spanner-intro">One $200 transfer. Explore how isolation, atomicity, replication, and real time fit together.</p>
+      <spanner-transaction-lab></spanner-transaction-lab>
+      <noscript><div class="alert alert-warning">This visualization requires JavaScript.</div></noscript>
+    </div>
+  </main>
+</body>
+</html>

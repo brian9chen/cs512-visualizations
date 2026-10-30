@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Step through Chord key lookup with finger tables and two interactive examples.">
+  <title>CPS 512 - Distributed Systems - Chord Key Lookup</title>
+  <link href="../css/style.css" rel="stylesheet" type="text/css">
+  <script src="../js/chord-model.js" defer></script>
+  <script src="../js/chord-animation.js?v=4" defer></script>
+  <style>
+    main.container-wide { max-width:1280px; }
+    body { padding-top:60px; }
+    .chord-page { margin:10px 0; }
+    .chord-page h1 { margin:0 0 4px; font-size:1.8rem; }
+    .chord-intro { margin:0 0 10px; color:#5c667a; font-size:.95rem; }
+    .chord-rules { margin-top:12px; }
+    .chord-rules summary { color:#1678b8; cursor:pointer; }
+    .chord-rules ul { margin-top:12px; }
+  </style>
+</head>
+<body>
+  <nav class="navbar fixed-top navbar-expand navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand mb-0 h1" href="../index.html">CPS 512 - Distributed Systems</a>
+      <ul class="navbar-nav">
+        <li class="nav-item"><a class="nav-link" href="../visualization.html">Visualization</a></li>
+      </ul>
+    </div>
+  </nav>
+  <main class="container container-wide">
+    <div class="chord-page">
+      <h1>Chord Key Lookup</h1>
+      <p class="chord-intro">Follow a key lookup around the ring and see how each finger table chooses the next hop.</p>
+
+      <chord-lookup-animation></chord-lookup-animation>
+
+      <noscript><div class="alert alert-warning mt-3">This interactive demonstration requires JavaScript.</div></noscript>
+      <details class="chord-rules">
+        <summary>The lookup rules and assumptions</summary>
+        <ul>
+          <li><strong>Key ownership:</strong> successor(k) is the first active node at or clockwise after k, wrapping through zero.</li>
+          <li><strong>Finger construction:</strong> finger i points to successor((n + 2<sup>i</sup>) mod 2<sup>m</sup>), with i = 0, …, m − 1.</li>
+          <li><strong>Routing:</strong> if k ∈ (n, successor(n)], contact the successor. Otherwise, forward to the closest finger strictly preceding k clockwise.</li>
+        </ul>
+        <p class="text-muted small">Assumptions: a stable ring, correct finger tables, no failed nodes, and identifiers already hashed into a 6-bit space.
+          The final hop contacts the owner; response messages are omitted.
+          Algorithm reference: <a href="https://pdos.csail.mit.edu/papers/chord:sigcomm01/chord_sigcomm.pdf">Stoica et al., Chord (SIGCOMM 2001)</a>.</p>
+      </details>
+    </div>
+  </main>
+</body>
+</html>
