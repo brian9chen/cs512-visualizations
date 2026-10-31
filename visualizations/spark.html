@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Explore Spark RDDs, lazy execution, caching, shuffles, stage scheduling, and lineage recovery.">
+  <title>CPS 512 - Distributed Systems - Spark</title>
+  <link href="../css/style.css" rel="stylesheet" type="text/css">
+  <script src="../js/spark-model.js?v=4" defer></script>
+  <script src="../js/spark-animation.js?v=8" defer></script>
+  <style>
+    body { padding-top:60px; }
+    main.container-wide { max-width:1440px; }
+    .spark-page { margin:10px 0 0; }
+    .spark-page h1 { font-size:1.7rem; margin:0 0 4px; }
+    .spark-intro { margin:0 0 10px; color:#5c667a; font-size:.92rem; }
+  </style>
+</head>
+<body>
+  <nav class="navbar fixed-top navbar-expand navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand mb-0 h1" href="../index.html">CPS 512 - Distributed Systems</a>
+      <ul class="navbar-nav"><li class="nav-item"><a class="nav-link" href="../visualization.html">Visualization</a></li></ul>
+    </div>
+  </nav>
+  <main class="container container-wide">
+    <div class="spark-page">
+      <h1>Spark: Plan, Execute, Reuse, Recover</h1>
+      <p class="spark-intro">MapReduce jobs often pass reusable results through stable storage. Spark can retain RDD partitions across actions—and rebuild lost ones.</p>
+      <spark-rdd-lab></spark-rdd-lab>
+      <noscript><div class="alert alert-warning">This visualization requires JavaScript.</div></noscript>
+    </div>
+  </main>
+</body>
+</html>
