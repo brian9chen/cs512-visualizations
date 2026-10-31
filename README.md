@@ -10,29 +10,39 @@ From this directory:
 python3 -m http.server 8000
 ```
 
-Open <http://localhost:8000/visualizations/chord.html>. Save changes and refresh.
-The gallery is at <http://localhost:8000/visualization.html>.
+Open <http://localhost:8000/visualization.html> for a gallery of all visualizations developed in this repo.
 
 ## Handoff
 
-Copy these new files into the matching directories in the course repo:
-
-- `visualizations/chord.html`
-- `js/chord-model.js`
-- `js/chord-animation.js`
-- `visualizations/spanner.html`
-- `js/spanner-model.js`
-- `js/spanner-animation.js`
-- `visualizations/memcached.html`
-- `js/memcached-model.js`
-- `js/memcached-animation.js`
-- `visualizations/spark.html`
-- `js/spark-model.js`
-- `js/spark-animation.js`
+Copy these new files into the matching directories in the course repo.
 
 Add links to the new pages in the course's `visualization.html`.
 This workspace's gallery contains matching cards you can copy.
 The components isolate their styles with Shadow DOM.
+
+### Chord
+
+- `visualizations/chord.html`
+- `js/chord-model.js`
+- `js/chord-animation.js`
+
+### Spanner
+
+- `visualizations/spanner.html`
+- `js/spanner-model.js`
+- `js/spanner-animation.js`
+
+### Memcached
+
+- `visualizations/memcached.html`
+- `js/memcached-model.js`
+- `js/memcached-animation.js`
+
+### Spark
+
+- `visualizations/spark.html`
+- `js/spark-model.js`
+- `js/spark-animation.js`
 
 ## Chord
 
