@@ -2,23 +2,30 @@ const assert = require("node:assert/strict");
 const { test } = require("node:test");
 const M = require("../js/spark-model.js");
 
-test("defining and marking the RDD do no input work; count computes its records", () => {
+test("textFile, filter, and persist do no record processing before count", () => {
   for (const caching of [true, false]) {
     const steps = M.lifecycleSteps(caching);
-    assert.equal(steps.length, 4);
-    for (const step of steps.slice(0, 2)) {
+    assert.equal(steps.length, 5);
+    for (const step of steps.slice(0, 3)) {
       assert.equal(step.scans, 0);
       assert.equal(step.filterRecords, 0);
       assert.equal(step.computed, false);
       assert.equal(step.resident, false);
       assert.equal(step.result.all, null);
     }
+    assert.equal(steps[0].errorsDefined, false);
+    assert.equal(steps[1].errorsDefined, true);
+    assert.equal(steps[0].code, 'val lines = spark.textFile("hdfs://logs")');
+    assert.equal(steps[1].code, 'val errors = lines.filter(_.startsWith("ERROR"))');
+    assert.equal(steps[3].code, "val allErrors = errors.count()");
+    assert.equal(steps[4].code, 'val dbErrors = errors.filter(_.contains("MySQL")).count()');
+    assert.equal(steps[1].marked, false);
     assert.equal(steps[0].marked, false);
-    assert.equal(steps[1].marked, caching);
-    assert.equal(steps[2].computed, true);
-    assert.equal(steps[2].resident, caching);
-    assert.equal(steps[2].scans, 1);
-    assert.equal(steps[2].result.all, M.LIFECYCLE_ERRORS.flat().length);
+    assert.equal(steps[2].marked, caching);
+    assert.equal(steps[3].computed, true);
+    assert.equal(steps[3].resident, caching);
+    assert.equal(steps[3].scans, 1);
+    assert.equal(steps[3].result.all, M.LIFECYCLE_ERRORS.flat().length);
   }
 });
 

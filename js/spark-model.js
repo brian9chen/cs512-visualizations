@@ -38,17 +38,18 @@
   const LIFECYCLE_ERRORS = Object.freeze(ERRORS.slice(0, 2));
 
   function lifecycleSteps(caching = true) {
-    const q = sequence({ caching, marked: false, computed: false, resident: false, scans: 0, filterRecords: 0, active: "plan", result: { all: null, mysql: null } });
+    const q = sequence({ caching, errorsDefined: false, marked: false, computed: false, resident: false, scans: 0, filterRecords: 0, active: "plan", result: { all: null, mysql: null } });
     const add = q.add.bind(q);
-    add("Define RDD", "filter() saves a plan. It does not read the log.", "An RDD is a dataset split into partitions. Spark knows how to build the two errors partitions, but has not computed their records yet.", 'val errors = logs.filter(_.startsWith("ERROR"))');
-    add(caching ? "Mark to cache" : "Skip caching", caching ? "persist() still does not run the filter" : "Without persist(), results will not be kept for reuse",
-      caching ? "It asks Spark to keep the errors partitions after an action computes them. The log has still been scanned zero times."
-        : "The plan is still available. Each count will have to read the log and build the errors partitions again.", caching ? "errors.persist()" : "// no persist()", { marked: caching });
-    add("Count errors", "count() triggers the work: read → filter → count", caching ? "Workers read six log records and keep the four errors. count() returns 4. Because persist() was requested, those error records stay in memory."
-      : "Workers read six log records and find four errors. count() returns 4. These records are shown as this action’s output; they are not saved in memory.", "errors.count() // 4", { computed: true, resident: caching, scans: 1, filterRecords: 6, active: "compute", result: { all: 4, mysql: null } });
-    add("Count MySQL", caching ? "The next count starts with the saved errors" : "Without caching, the next count repeats the work",
-      caching ? "Workers check the four saved errors for MySQL and return 2. They do not read the log or rerun the ERROR filter."
-        : "Workers read the log and rerun the ERROR filter, then check for MySQL. The answer is still 2, but the log has now been scanned twice.", 'errors.filter(_.contains("MySQL")).count() // 2', { scans: caching ? 1 : 2, filterRecords: caching ? 6 : 12, active: caching ? "reuse" : "recompute", result: { all: 4, mysql: 2 } });
+    add("Describe input", "textFile() describes where the input lives", "lines is an RDD backed by HDFS. The log records below are a preview; executors have not scanned them yet.", 'val lines = spark.textFile("hdfs://logs")');
+    add("Define errors", "filter() creates a new RDD description, not its records", "The driver adds the ERROR predicate and its parent, lines, to the plan. The errors RDD now exists, but no log filtering has run.", 'val errors = lines.filter(_.startsWith("ERROR"))', { errorsDefined: true, active: "extend" });
+    add(caching ? "Mark to cache" : "Skip caching", caching ? "persist() asks Spark to save errors once computed" : "Without persist(), results will not be kept for reuse",
+      caching ? "Only the storage policy changes. The error partitions are still uncomputed, and both executors remain idle."
+        : "The errors RDD description remains available. Each count will need to read the log and run the ERROR filter again.", caching ? "errors.persist()" : "// errors.persist() omitted", { marked: caching, active: "plan" });
+    add("Count errors", "The first count() triggers tasks to read and filter", caching ? "Executors read six log records and find four errors. allErrors is 4. Spark retains the error partitions because persist() was requested."
+      : "Executors read six log records and find four errors. allErrors is 4. The computed error partitions are not retained.", "val allErrors = errors.count()", { computed: true, resident: caching, scans: 1, filterRecords: 6, active: "compute", result: { all: 4, mysql: null } });
+    add("Count MySQL", caching ? "The MySQL query reuses cached error partitions" : "Without caching, the MySQL query repeats the log scan",
+      caching ? "Executors apply the MySQL predicate to the four cached errors. dbErrors is 2. They do not reread the log or rerun the ERROR filter."
+        : "Executors read the log and rerun the ERROR filter before checking for MySQL. dbErrors is still 2, but the log has now been scanned twice.", 'val dbErrors = errors.filter(_.contains("MySQL")).count()', { scans: caching ? 1 : 2, filterRecords: caching ? 6 : 12, active: caching ? "reuse" : "recompute", result: { all: 4, mysql: 2 } });
     return q.steps;
   }
 

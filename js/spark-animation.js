@@ -27,15 +27,15 @@
     const scan = s.computed && !reuse;
     const query = s.result.mysql !== null;
     const source = M.LIFECYCLE_LOGS.map((records, i) => `<div class="log-partition"><strong>Partition ${i}</strong>${records.map(line => `<span class="${scan && !line.startsWith("ERROR") ? "excluded" : ""}">${escape(line)}</span>`).join("")}</div>`).join("");
-    const errors = M.LIFECYCLE_ERRORS.map((records, i) => `<div class="executor-slot"><div class="executor-heading"><strong>Executor ${i + 1}</strong><span>${!s.computed ? "Idle" : reuse ? "Read cached block" : s.resident ? "Cache saved" : query ? "Recompute · discard" : "Compute · discard"}</span></div><div class="error-partition ${s.computed ? s.resident ? "computed" : "transient" : "pending"}"><strong>errors · partition ${i}</strong>${s.computed ? records.map(line => `<span class="${query ? line.includes("MySQL") ? "match" : "nonmatch" : ""}">${escape(line)}</span>`).join("") : '<span class="not-computed">Not computed yet</span>'}</div></div>`).join("");
+    const partitions = M.LIFECYCLE_ERRORS.map((records, i) => `<div class="executor-slot"><div class="executor-heading"><strong>Executor ${i + 1}</strong><span>${!s.computed ? "Idle" : reuse ? "Read cached block" : s.resident ? "Cache saved" : query ? "Recompute · discard" : "Compute · discard"}</span></div><div class="error-partition ${s.computed ? s.resident ? "computed" : "transient" : "pending"}"><strong>${s.errorsDefined ? "errors" : "lines"} · partition ${i}</strong>${s.computed ? records.map(line => `<span class="${query ? line.includes("MySQL") ? "match" : "nonmatch" : ""}">${escape(line)}</span>`).join("") : '<span class="not-computed">Not computed yet</span>'}</div></div>`).join("");
     return `<div class="rdd-lesson">
-      <div class="saved-plan"><span class="zone-label">DRIVER · SAVED PLAN</span><div class="recipe"><code>logs</code><span>→</span><code>filter(ERROR)</code><span>→</span><code>errors RDD</code><span class="cache-policy ${s.marked ? "requested" : ""}">${s.marked ? s.computed ? "Keep computed errors" : "Save after computing" : s.computed ? "Not retained" : "No saved data yet"}</span></div></div>
+      <div class="saved-plan"><span class="zone-label">DRIVER · SAVED PLAN</span><div class="recipe"><code>lines RDD</code><span class="input-source">HDFS-backed</span>${s.errorsDefined ? `<span class="plan-extension ${s.active === "extend" ? "just-added" : ""}"><span>→</span><code>filter(ERROR)</code><span>→</span><code>errors RDD</code>${s.marked ? '<span class="plan-policy">Cache on first action</span>' : ""}${s.active === "extend" ? '<small>NEW DESCRIPTION · NOT EXECUTED</small>' : ""}</span>` : ""}</div></div>
       <div class="rdd-data-grid">
         <div class="log-column ${reuse ? "bypassed" : ""}"><div class="zone-label">LOG FILE · ${reuse ? "NOT REREAD" : s.computed ? "SOURCE DATA" : "PREVIEW ONLY"}</div>${source}</div>
-        <div class="compute-gate ${scan ? "running" : reuse ? "reusing" : "waiting"}"><strong>${reuse ? "Skip the log" : s.active === "recompute" ? "Read + filter again" : scan ? "Read + filter" : "Waiting"}</strong><span class="flow-arrow" aria-hidden="true">${reuse ? "↪" : "→"}</span><span>${reuse ? "Use saved errors" : scan ? "count() runs the plan" : "Needs an action"}</span></div>
-        <div class="errors-column"><div class="zone-label">WORKERS · EXECUTORS <span class="data-state">${s.resident ? "CACHED IN MEMORY" : s.computed ? "ACTION OUTPUT" : "PLAN ONLY"}</span></div>${errors}<div class="partition-note">One RDD spans these executors. Partition placement can change.</div></div>
+        <div class="compute-gate ${scan ? "running" : reuse ? "reusing" : "waiting"}"><strong>${reuse ? "Skip the log" : s.active === "recompute" ? "Read + filter" : scan ? "Read + filter" : "Waiting"}</strong><span class="flow-arrow" aria-hidden="true">${reuse ? "↪" : "→"}</span><span>${reuse ? "Use cached errors" : scan ? "count() runs the plan" : s.active === "extend" ? "New RDD, no execution" : "Needs an action"}</span></div>
+        <div class="errors-column"><div class="zone-label">WORKERS · EXECUTORS <span class="data-state">${s.resident ? "CACHED IN MEMORY" : s.computed ? "ACTION OUTPUT" : "PLAN ONLY"}</span></div>${partitions}<div class="partition-note">One RDD spans these executors. Partition placement can change.</div></div>
       </div>
-      <div class="rdd-outcome"><div class="work-summary"><div class="scan-counter">Log scans <strong>${s.scans}</strong></div><span>${s.scans * M.LIFECYCLE_LOGS.flat().length} log records read${query ? reuse ? " · second scan avoided" : " · log read again" : ""}</span></div><div class="action-result">${s.computed ? `<span class="results-label">${query ? "Same answers in both modes" : "Returned answer"}</span><span>First count <strong>${s.result.all}</strong></span>${query ? `<span>MySQL count <strong>${s.result.mysql}</strong></span>` : ""}` : '<strong>No action yet → no records processed</strong>'}</div></div>
+      <div class="rdd-outcome"><div class="work-summary"><div class="scan-counter">Log scans <strong>${s.scans}</strong></div><span>${s.scans * M.LIFECYCLE_LOGS.flat().length} log records read${query ? reuse ? " · second scan avoided" : " · log read again" : ""}</span></div><div class="action-result">${s.computed ? `<span class="results-label">${query ? "Same answers in both modes" : "Returned answer"}</span><span>allErrors <strong>${s.result.all}</strong></span>${query ? `<span>dbErrors <strong>${s.result.mysql}</strong></span>` : ""}` : '<strong>No action yet → no records processed</strong>'}</div></div>
     </div>`;
   }
 
@@ -210,7 +210,7 @@
         scene = lifecycleDiagram(s);
         concept = badge(s.computed ? s.active === "reuse" ? "REUSE DATA" : "RUN THE PLAN" : "NO WORK YET", s.active === "reuse" ? "teal" : "blue");
         inspector = "";
-        note = "Two partitions, six log records, four errors. Source records are a teaching preview. Actions run work; persist() requests retention after computation.";
+        note = "textFile describes HDFS input; filter describes errors. persist requests retention after computation. The first count computes errors; the second query can reuse those cached partitions.";
       } else if (this.view === "execution") {
         scene = executionDiagram(s);
         concept = badge(s.operation === "shuffle" ? "WIDE DEPENDENCY" : "NARROW PIPELINE", s.operation === "shuffle" ? "amber" : "blue");
@@ -344,8 +344,15 @@
           .saved-plan { display:flex; align-items:center; gap:18px; border:1px solid #cbdceb; border-radius:8px; padding:8px 13px; background:#edf5fc; }
           .recipe { flex:1; display:flex; align-items:center; gap:16px; margin-top:0; color:#718ca4; }
           .recipe code { color:#235b82; font:650 14px ui-monospace,SFMono-Regular,Menlo,monospace; }
-          .cache-policy { font-size:11px; margin-left:auto; color:#6c7c8b; }
-          .cache-policy.requested { color:#96610d; background:#fff0cd; border-radius:4px; padding:3px 7px; }
+          .plan-extension { display:inline-flex; align-items:center; gap:12px; border:1px solid transparent; border-radius:6px; padding:5px 8px; position:relative; }
+          .input-source { font-size:10px; color:#748ba0; }
+          .plan-policy { padding:3px 6px; border-radius:4px; background:#fff0cd; color:#96610d; font-size:9px; white-space:nowrap; }
+          .plan-extension.just-added { border-color:#6ca5d1; background:#dceefa; }
+          .plan-extension small { position:absolute; top:100%; left:0; font-size:8px; font-weight:750; color:#126798; white-space:nowrap; padding-top:2px; }
+          .recipe { gap:12px; }
+          .recipe code { font-size:12px; }
+          .recipe > code,.plan-extension code { white-space:nowrap; }
+          .saved-plan:has(.just-added) { padding-bottom:16px; }
           .rdd-data-grid { display:grid; grid-template-columns:minmax(0,1fr) 150px minmax(0,1.15fr); gap:18px; align-items:start; }
           .log-partition,.error-partition { padding:7px 11px; margin-top:7px; border:1px solid #ccd8e5; border-radius:7px; background:white; min-height:72px; }
           .log-partition strong,.error-partition strong { display:block; font-size:10px; margin-bottom:3px; color:#6c8093; }
@@ -381,9 +388,9 @@
           .work-summary .scan-counter strong { background:#e3eff9; border-radius:6px; padding:0 9px; }
           .scan-counter { display:flex; align-items:center; gap:12px; font-size:12px; color:#587188; white-space:nowrap; }
           .scan-counter strong { font-size:25px; color:#1678b8; }
-          @media(max-width:1100px) { .saved-plan { display:block; } .saved-plan .recipe { margin-top:4px; } .lifecycle-view .workbench { grid-template-columns:100px minmax(0,1fr); } .rdd-data-grid { grid-template-columns:minmax(0,1fr) 105px minmax(0,1.15fr); gap:10px; } .recipe { gap:10px; } .recipe code { font-size:12px; } .cache-policy { font-size:10px; } .data-state { float:none; display:block; } }
+          @media(max-width:1100px) { .saved-plan { display:block; } .saved-plan .recipe { margin-top:4px; } .lifecycle-view .workbench { grid-template-columns:100px minmax(0,1fr); } .rdd-data-grid { grid-template-columns:minmax(0,1fr) 105px minmax(0,1.15fr); gap:10px; } .recipe { gap:10px; } .recipe code { font-size:12px; } .data-state { float:none; display:block; } }
           @media(max-width:900px) { .lifecycle-view .workbench { grid-template-columns:1fr; } }
-          @media(max-width:620px) { .lifecycle-view #scene { height:auto; padding:12px; } .rdd-data-grid { grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; } .compute-gate { grid-column:1 / -1; grid-row:1; flex-direction:row; justify-content:center; padding:0; } .flow-arrow { font-size:23px; } .recipe { flex-wrap:wrap; } .cache-policy { margin-left:0; } .action-result { gap:10px; } .results-label { display:none; } .rdd-outcome { align-items:start; flex-wrap:wrap; } .executor-heading { flex-wrap:wrap; gap:2px; } .work-summary { gap:8px; } .log-partition span,.error-partition span { font-size:9px; overflow-wrap:anywhere; } }
+          @media(max-width:620px) { .lifecycle-view #scene { height:auto; padding:12px; } .rdd-data-grid { grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; } .compute-gate { grid-column:1 / -1; grid-row:1; flex-direction:row; justify-content:center; padding:0; } .flow-arrow { font-size:23px; } .recipe { flex-wrap:wrap; } .action-result { gap:10px; } .results-label { display:none; } .rdd-outcome { align-items:start; flex-wrap:wrap; } .executor-heading { flex-wrap:wrap; gap:2px; } .work-summary { gap:8px; } .log-partition span,.error-partition span { font-size:9px; overflow-wrap:anywhere; } }
           @media(prefers-reduced-motion:reduce) { * { animation:none !important; transition:none !important; } }
         </style>
         <div class="lab"><div class="tabs" role="tablist" aria-label="Spark lessons">${VIEWS.map((view, index) => `<button id="tab-${view.id}" class="tab" role="tab" data-view="${view.id}" aria-controls="window" aria-selected="false" tabindex="-1"><span class="tab-number">${String(index + 1).padStart(2, "0")}</span><span><span class="tab-name">${view.name}</span><span class="tab-sub">${view.sub}</span></span></button>`).join("")}</div>
